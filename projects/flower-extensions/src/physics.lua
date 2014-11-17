@@ -26,7 +26,7 @@ local B2Fixture
 -- variables
 local MOAIBox2DWorldInterface = MOAIBox2DWorld.getInterfaceTable()
 local MOAIBox2DBodyInterface = MOAIBox2DBody.getInterfaceTable()
-local MOAIBox2DFixtureInterface = MOAIBox2DFixture,getInterfaceTable()
+local MOAIBox2DFixtureInterface = MOAIBox2DFixture.getInterfaceTable()
 
 ----------------------------------------------------------------------------------------------------
 -- @type B2World
@@ -37,7 +37,7 @@ B2World.__moai_class = MOAIBox2DWorld
 M.B2World = B2World
 
 --- Default Gravity
-B2World.DEFUALT_GRAVITY = {0, 10}
+B2World.DEFAULT_GRAVITY = {0, 10}
 
 --- Default UnitsToMeters
 B2World.DEFAULT_UNITS_TO_METERS = 0.06
@@ -51,22 +51,20 @@ B2World.BODY_TYPES = {
 
 --------------------------------------------------------------------------------
 -- The constructor.
--- @param params 
+-- @param params
 --------------------------------------------------------------------------------
 function B2World:init()
     self.imageFactory = ClassFactory(Image)
     self.movieClipFactory = ClassFactory(MovieClip)
-    self:setGravity(unpack(B2World.DEFUALT_GRAVITY))
-    self:setUnitsToMeters(B2World.DEFAULT_UNITS_TO_METERS)
+    self:setGravity(unpack(B2World.DEFAULT_GRAVITY))
+    self:setUnitsToMeters(unpack(B2World.DEFAULT_UNITS_TO_METERS))
 end
+
 
 function B2World:createImage(params)
     assert(params.texture, "Not property found!->texture")
-
-    local image = Image(params.texture)
-    
-    return physicsWorld:createBody {
-        prop = image,
+    return self:createBody {
+        prop = Image(params.texture),
         bodyType = params.bodyType,
         fixtureData = params.fixtureData,
     }
@@ -75,11 +73,8 @@ end
 
 function B2World:createMovieClip(params)
     assert(params.texture, "Not property found!->texture")
-
-    local image = MovieClip(params.texture)
-    
-    return physicsWorld:createBody {
-        prop = image,
+    return self:createBody {
+        prop = MovieClip(params.texture),
         bodyType = params.bodyType,
         fixtureData = params.fixtureData,
     }
@@ -99,16 +94,20 @@ function B2World:createBody(params)
     local physicsData = params.physicsData or {}
 
     if #physicsData == 0 then
-        table.insert(physicsData, {shape == "rectangle"})
+        table.insert(physicsData, {shape = "rectangle"})
     end
-    
+
     local body = self:addBody(bodyType)
     local width, height = prop:getSize()
+    local sx, sy = prop:getScl()
+
+    width = width * math.abs(sx)
+    height = height * math.abs(sy)
+
     local xMin, yMin, xMax, yMax = -width / 2, -height / 2, width / 2, height / 2
-    
+
     for i, data in ipairs(physicsData) do
         data = table.copy(data)
-        data.shape = data.shape or "rectangle"
         if data.shape == "rectangle" then
             data.xMin = data.xMin or xMin
             data.yMin = data.yMin or yMin
@@ -122,10 +121,10 @@ function B2World:createBody(params)
     end
 
     prop:setPos(xMin, yMin)
-    prop:setParent(body)
+    prop:setBody(body)
     prop.body = body
     body.prop = prop
-    
+
     body:resetMassData()
     return body
 end
@@ -138,29 +137,21 @@ end
 function B2World:addBody(bodyType)
     bodyType = bodyType or "dynamic"
     bodyType = type(bodyType) == "string" and B2World.BODY_TYPES[bodyType] or bodyType
-    return B2Body(MOAIBox2DBodyInterface.addBody(self, bodyType))
+    return B2Body(MOAIBox2DWorldInterface.addBody(self, bodyType))
 end
 
 ----------------------------------------------------------------------------------------------------
 -- @type B2Body
 ----------------------------------------------------------------------------------------------------
 B2Body = class()
+B2Body.__index = MOAIBox2DBodyInterface
+B2Body.__moai_class = MOAIBox2DBody
 M.B2Body = B2Body
 
---------------------------------------------------------------------------------
--- The constructor.
--- @param body MOAIBox2DBody instance.
---------------------------------------------------------------------------------
-function B2Body:new(body)
-    table.copy(self, assert(body))
-    
-    if body.init then
-        body:init()
-    end
-    
-    body.new = nil
-    body.init = nil
-    
+
+function B2Body:__new(body, ...)
+    body:setInterface(self.__interface)
+    body:init(...)
     return body
 end
 
@@ -180,10 +171,10 @@ function B2Body:addFixtureData(...)
     for i, data in ipairs({...}) do
         if data.radius then
             local fixture = self:addCircle(data.center.x, data.center.y, data.radius)
-            fixture:copyParams(data)
+            fixture:setProperties(data)
         elseif data.shape == "rectangle" then
             local fixture = self:addRect(data.xMin, data.yMin, data.xMax, data.yMax)
-            fixture:copyParams(data)
+            fixture:setProperties(data)
         elseif type(data.shape) == "table" then
             local fixture = self:addPolygon(data.shape)
             fixture:setProperties(data)
@@ -195,10 +186,9 @@ end
 -- Add a circle.
 --------------------------------------------------------------------------------
 function B2Body:addCircle(x, y, radius)
-    local fixture = Interface.addCircle(self, x, y, radius)
+    local fixture = MOAIBox2DBodyInterface.addCircle(self, x, y, radius)
     fixture = B2Fixture(fixture)
-    fixture:setProperties(M.DEFAULT_FIXTURE_PARAMS)
-    table.insert(self:getFixtures(), fixture)
+    table.insert(self._fixtures, fixture)
     return fixture
 end
 
@@ -206,10 +196,10 @@ end
 -- Add the edge.
 --------------------------------------------------------------------------------
 function B2Body:addEdges(verts)
-    local fixture = Interface.addEdges(self, verts)
-    fixture = PhysicsFixture(fixture)
-    fixture:copyParams(M.DEFAULT_FIXTURE_PARAMS)
-    table.insert(self:getFixtures(), fixture)
+    local fixture = MOAIBox2DBodyInterface.addEdges(self, verts)
+    fixture = B2Fixture(fixture)
+    fixture:setProperties(M.DEFAULT_FIXTURE_PARAMS)
+    table.insert(self._fixtures, fixture)
     return fixture
 end
 
@@ -217,10 +207,9 @@ end
 -- Adds a polygon.
 --------------------------------------------------------------------------------
 function B2Body:addPolygon(verts)
-    local fixture = Interface.addPolygon(self, verts)
-    fixture = PhysicsFixture(fixture)
-    fixture:copyParams(M.DEFAULT_FIXTURE_PARAMS)
-    table.insert(self:getFixtures(), fixture)
+    local fixture = MOAIBox2DBodyInterface.addPolygon(self, verts)
+    fixture = B2Fixture(fixture)
+    table.insert(self._fixtures, fixture)
     return fixture
 end
 
@@ -228,9 +217,9 @@ end
 -- Add a rectangle.
 --------------------------------------------------------------------------------
 function B2Body:addRect(xMin, yMin, xMax, yMax)
-    local fixture = Interface.addRect(self, xMin, yMin, xMax, yMax)
+    local fixture = MOAIBox2DBodyInterface.addRect(self, xMin, yMin, xMax, yMax)
     fixture = B2Fixture(fixture)
-    table.insert(self:getFixtures(), fixture)
+    table.insert(self._fixtures, fixture)
     return fixture
 end
 
@@ -258,7 +247,7 @@ end
 -- @param angle angle
 --------------------------------------------------------------------------------
 function B2Body:setAngle(angle)
-    local x, y = self:getPosition()
+    local x, y = self:getPos()
     self:setTransform(x, y, angle)
 end
 
@@ -293,32 +282,23 @@ end
 -- @type B2Body
 ----------------------------------------------------------------------------------------------------
 B2Fixture = class()
+B2Fixture.__index = MOAIBox2DFixtureInterface
+B2Fixture.__moai_class = MOAIBox2DFixture
 M.B2Fixture = B2Fixture
 
---------------------------------------------------------------------------------
--- The constructor.
--- @param obj MOAIBox2DFixture instance.
---------------------------------------------------------------------------------
-function B2Fixture:new(obj, ...)
-    table.copy(self, assert(obj))
-    
-    if obj.init then
-        obj:init(...)
-    end
-    
-    obj.new = nil
-    obj.init = nil
-    
-    return obj
+
+function B2Fixture:__new(fixture, ...)
+    fixture:setInterface(self.__interface)
+    fixture:init(...)
+    return fixture
 end
+
 
 --------------------------------------------------------------------------------
 -- The constructor.
 --------------------------------------------------------------------------------
-function B2Fixture:init(params)
-    if params then
-        self:setProperties(params)
-    end
+function B2Fixture:init()
+    --
 end
 
 --------------------------------------------------------------------------------
@@ -327,6 +307,8 @@ end
 -- (params:density, friction, restitution, filter, collisionHandler, collisionArbiter)
 --------------------------------------------------------------------------------
 function B2Fixture:setProperties(params)
+    self.name = self.name or params.pe_fixture_id or params.name
+    self.preserve = self.preserve or params.preserve
     if params.density then
         self:setDensity(params.density)
     end
@@ -334,7 +316,10 @@ function B2Fixture:setProperties(params)
         self:setFriction(params.friction)
     end
     if params.restitution then
-        self:setRestitution(params.restitution)        
+        self:setRestitution(params.restitution)
+    end
+    if params.sensor then
+        self:setSensor(params.sensor)
     end
     if params.filter then
         local filter = params.filter
@@ -343,7 +328,7 @@ function B2Fixture:setProperties(params)
     if params.collisionHandler then
         local collisionHandler = params.collisionHandler
         local collisionArbiter = params.arbiter or MOAIBox2DArbiter.ALL
-        self:setCollisionHandler(collisionHandler, MOAIBox2DArbiter.ALL)
+        self:setCollisionHandler(collisionHandler, collisionArbiter)
     end
 end
 
@@ -353,7 +338,7 @@ end
 function B2Fixture:destroy()
     local body = self:getBody()
     MOAIBox2DFixtureInterface.destroy(self)
-    
+
     local fixtures = body:getFixtures()
     table.removeElement(fixtures, self)
 end
