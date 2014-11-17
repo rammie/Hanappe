@@ -117,6 +117,7 @@ function TileMap:init()
     self.tileHeight = 0
     self.mapLayers = {}
     self.tilesets = {}
+    self.bodies = {}
     self.properties = {}
     self.resourceDirectory = ""
     self.tilesetFactory = ClassFactory(Tileset)
@@ -466,7 +467,6 @@ end
 function TileLayer:saveData()
     local data = self.data or {}
     self.data = data
-    data.name = self.name
     data.name = self.name
     data.x = self:getLeft()
     data.y = self:getTop()
@@ -1150,7 +1150,7 @@ function TileLayerRenderer:createRenderer(tileset)
     if self.tilesetToRendererMap[tileset] then
         return
     end
-    
+
     local texture = tileset:loadTexture(MOAITexture.GL_NEAREST)
     local tw, th = texture:getSize()
 
@@ -1174,6 +1174,18 @@ function TileLayerRenderer:createRenderer(tileset)
             if gid > 0 then
                 local tileNo = self:gidToTileNo(tileset, gid)
                 table.insertElement(rowData, tileNo)
+
+                local tileId = tileset:getTileIdByGid(gid)
+                local properties = tileset:getTileProperties(tileId)
+                if properties and properties.bodyType then
+                    table.insert(self.tileMap.bodies, {
+                        properties = properties,
+                        x = x,
+                        y = y,
+                        tileWidth = tileWidth,
+                        tileHeight = tileHeight
+                    })
+                end
             else
                 table.insertElement(rowData, 0)
             end
