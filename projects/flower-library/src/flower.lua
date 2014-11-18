@@ -61,7 +61,7 @@ local touchSensor = MOAIInputMgr.device.touch
 local keyboardSensor = MOAIInputMgr.device.keyboard
 
 -- interfaces
-local MOAIPropInterface = MOAIProp.getInterfaceTable()
+local MOAIProp2DInterface = MOAIProp2D.getInterfaceTable()
 local MOAILayerInterface = MOAILayer.getInterfaceTable()
 local MOAICameraInterface = MOAICamera.getInterfaceTable()
 local MOAITextureInterface = MOAITexture.getInterfaceTable()
@@ -114,14 +114,39 @@ end
 -- @param height Height of the screen
 -- @param scale (Option)Scale of the Viewport to the Screen
 function M.updateDisplaySize(width, height, scale)
-    M.screenWidth = width
-    M.screenHeight = height
-    M.viewScale = scale or M.viewScale
-    M.viewWidth = M.screenWidth / M.viewScale
-    M.viewHeight = M.screenHeight / M.viewScale
+    M.viewWidth = 960
+    M.viewHeight = 640
+    M.viewScale = M.viewHeight / M.viewWidth
+
+    M.screenOffsetX = 0
+    M.screenOffsetY = 0
+
+    local gameAspect = M.viewScale
+    local realAspect = height / width
+
+    if realAspect > gameAspect then
+        M.screenWidth = width
+        M.screenHeight = width * gameAspect
+     else
+        M.screenWidth = height / gameAspect
+        M.screenHeight = height
+     end
+
+     if M.screenWidth < width then
+        M.screenOffsetX = (width - M.screenWidth) * 0.5
+     end
+
+     if M.screenHeight < height then
+        M.screenOffsetY = (height - M.screenHeight) * 0.5
+     end
 
     M.viewport = M.viewport or MOAIViewport.new()
-    M.viewport:setSize(M.screenWidth, M.screenHeight)
+    M.viewport:setSize(
+        M.screenOffsetX,
+        M.screenOffsetY,
+        M.screenOffsetX + M.screenWidth,
+        M.screenOffsetY + M.screenHeight)
+
     M.viewport:setScale(M.viewWidth, -M.viewHeight)
     M.viewport:setOffset(-1, 1)
 end
@@ -2126,8 +2151,8 @@ end
 -- The base class of the display object, adding several useful methods.
 ----------------------------------------------------------------------------------------------------
 DisplayObject = class(EventDispatcher)
-DisplayObject.__index = MOAIPropInterface
-DisplayObject.__moai_class = MOAIProp
+DisplayObject.__index = MOAIProp2DInterface
+DisplayObject.__moai_class = MOAIProp2D
 M.DisplayObject = DisplayObject
 
 ---
@@ -2254,8 +2279,19 @@ end
 -- TODO:I avoid the bug of display settings MOAIProp.(2013/05/20 last build)
 -- @param visible visible
 function DisplayObject:setVisible(visible)
-    MOAIPropInterface.setVisible(self, visible)
+    MOAIProp2DInterface.setVisible(self, visible)
     self:forceUpdate()
+end
+
+---
+-- Sets the object's box 2d body, inheriting its transform.
+-- @param parent parent
+function DisplayObject:setBody(body)
+    self.parent = parent
+    self:clearAttrLink(MOAITransform.INHERIT_TRANSFORM)
+    if body then
+        self:setAttrLink(MOAITransform.INHERIT_TRANSFORM, body, MOAITransform.TRANSFORM_TRAIT)
+    end
 end
 
 ---
@@ -2434,7 +2470,7 @@ end
 -- @param yMax yMax
 -- @param zMax zMax
 function Group:setBounds(xMin, yMin, zMin, xMax, yMax, zMax)
-    MOAIPropInterface.setBounds(self, xMin, yMin, zMin, xMax, yMax, zMax)
+    MOAIProp2DInterface.setBounds(self, xMin, yMin, zMin, xMax, yMax, zMax)
 
     if self.contentScissorRect then
         self.contentScissorRect:setRect(xMin, yMin, xMax, yMax)
@@ -2554,7 +2590,7 @@ end
 -- Also sets the priority of any children.
 -- @param priority priority
 function Group:setPriority(priority)
-    MOAIPropInterface.setPriority(self, priority)
+    MOAIProp2DInterface.setPriority(self, priority)
 
     for i, v in ipairs(self.children) do
         v:setPriority(priority)
@@ -2562,7 +2598,7 @@ function Group:setPriority(priority)
 end
 
 function Group:setScissorRect(scissorRect)
-    MOAIPropInterface.setScissorRect(self, scissorRect)
+    MOAIProp2DInterface.setScissorRect(self, scissorRect)
 
     for i, child in ipairs(self.children) do
         if child.setParentScissorRect then
@@ -2952,7 +2988,7 @@ end
 -- @param texture Texture path, or texture
 function Image:setTexture(texture)
     self.texture = Resources.getTexture(texture)
-    MOAIPropInterface.setTexture(self, self.texture)
+    MOAIProp2DInterface.setTexture(self, self.texture)
     local tw, th = self.texture:getSize()
     self:setSize(tw, th)
 end
@@ -3001,7 +3037,7 @@ end
 -- @param texture Texture path, or texture
 function SheetImage:setTexture(texture)
     self.texture = Resources.getTexture(texture)
-    MOAIPropInterface.setTexture(self, self.texture)
+    MOAIProp2DInterface.setTexture(self, self.texture)
 end
 
 ---
@@ -3176,15 +3212,8 @@ M.MovieClip = MovieClip
 function MovieClip:init(texture, sizeX, sizeY, spacing, margin, flipX, flipY)
     SheetImage.init(self, texture, sizeX, sizeY, spacing, margin, flipX, flipY)
     self.animTable = {}
+    self.dataTable = {}
     self.currentAnim = nil
-end
-
----
--- Sets the custom animation.
--- @param name Name of anim
--- @param anim Anim object
-function MovieClip:setAnim(name, anim)
-    self.animTable[name] = anim
 end
 
 ---
@@ -3210,6 +3239,7 @@ function MovieClip:setAnimData(name, data)
     anim:setCurve(curve)
 
     self.animTable[name] = anim
+    self.dataTable[name] = data
 end
 
 ---
