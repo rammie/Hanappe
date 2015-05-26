@@ -1,9 +1,9 @@
 -----------------------
 -- Spine is 2d skeletal animation system by Esoteric Software
 -- http://www.esotericsoftware.com
--- 
+--
 -- This flower extension is an unofficial Spine runtime for Moai SDK
--- 
+--
 -- @author Vavius
 -- @release V1.0
 -----------------------
@@ -30,7 +30,6 @@ local AtlasAttachmentLoader
 -- Classes
 local Bone
 local Slot
-local AtlasMgr
 local Attachment
 local Skeleton
 local Timeline
@@ -146,9 +145,9 @@ end
 
 --[[
    table.bininsert( table, value [, comp] )
-   
+
    Inserts a given value through BinaryInsert into the table sorted by [, comp].
-   
+
    If 'comp' is given, then it must be a function that receives
    two table elements, and returns true when the first is less
    than the second, e.g. comp = function(a, b) return a > b end,
@@ -194,9 +193,9 @@ AtlasMgr.atlasCache = {}
 AtlasMgr.FILTERS = {
     Nearest = MOAITexture.GL_NEAREST,
     Linear  = MOAITexture.GL_LINEAR,
-    MipMapNearestNearest = MOAITexture.GL_NEAREST_MIPMAP_NEAREST, 
+    MipMapNearestNearest = MOAITexture.GL_NEAREST_MIPMAP_NEAREST,
     MipMapLinearNearest  = MOAITexture.GL_LINEAR_MIPMAP_NEAREST,
-    MipMapNearestLinear  = MOAITexture.GL_NEAREST_MIPMAP_LINEAR, 
+    MipMapNearestLinear  = MOAITexture.GL_NEAREST_MIPMAP_LINEAR,
     MipMapLinearLinear   = MOAITexture.GL_LINEAR_MIPMAP_LINEAR
 }
 
@@ -240,7 +239,7 @@ function AtlasMgr:load(atlas)
 
     for line in input:lines() do
         if line:len() == 0 and not table.isEmpty(pageData) then
-            if not table.isEmpty(regionData) then 
+            if not table.isEmpty(regionData) then
                 table.insert(regionsData, regionData)
             end
             pageData.regions = regionsData
@@ -274,7 +273,7 @@ function AtlasMgr:load(atlas)
             maxFilter = AtlasMgr.FILTERS[pageData.filter[2]],
             regions = {},
         }
-        
+
         for j, regionData in ipairs(pageData.regions) do
             atlas[i].regions[regionData.name] = {
                 rect = {
@@ -286,7 +285,7 @@ function AtlasMgr:load(atlas)
 
                 x = tonumber(regionData.xy[1]),
                 y = tonumber(regionData.xy[2]),
-                
+
                 origWidth = tonumber(regionData.orig[1]),
                 origHeight = tonumber(regionData.orig[2]),
                 rotate = regionData.rotate,
@@ -297,7 +296,7 @@ function AtlasMgr:load(atlas)
     return atlas
 end
 
---- 
+---
 -- Return deck and index for displaying attachment
 -- @param attachmentName actual attachment name
 -- @param atlasName attachment will be looked up in this atlas
@@ -364,7 +363,7 @@ function AtlasMgr:createSpineAtlasDeck(atlasPage, scale)
     for name, frame in pairs(frames) do
         local r = frame.rect
         local x, y = frame.x, frame.y
-        
+
         if frame.rotate then
             local u0, v0, u1, v1 = x / width, y / height, (x + r.height) / width, (y + r.width) / height
             deck:setUVQuad(i, u1, v1, u1, v0, u0, v0, u0, v1)
@@ -386,7 +385,7 @@ end
 
 --
 -- @type Bone
--- 
+--
 -- Skeleton bone. Inherited from MOAITransform
 Bone = class()
 Bone.__index = MOAITransformInterface
@@ -395,7 +394,7 @@ Bone.__moai_class = MOAITransform
 Bone.ROOT = 'root'
 
 ---
--- Constructor. 
+-- Constructor.
 -- @param boneData bone parameters table. Fields: (name, x, y, scaleX, scaleY, rotation, length, parent)
 -- @param skeleton skeleton object
 function Bone:init(boneData, skeleton)
@@ -431,12 +430,12 @@ end
 
 ---
 -- @type Slot
--- 
--- DisplayObject that will be bound to bones. 
+--
+-- DisplayObject that will be bound to bones.
 Slot = class(DisplayObject)
 
 ---
--- The constructor. 
+-- The constructor.
 -- @param slotData slot parameters table. Fields: (name, bone, color, attachment)
 -- @param skeleton skeleton object
 function Slot:init(slotData, skeleton)
@@ -499,10 +498,10 @@ end
 
 ---
 -- @type Attachment
--- 
--- Attachment is a visual representation of the slot. 
--- It contains information about deck, deckIndex, texture and own transform. 
--- This transform is used to offset attachment from the bone. 
+--
+-- Attachment is a visual representation of the slot.
+-- It contains information about deck, deckIndex, texture and own transform.
+-- This transform is used to offset attachment from the bone.
 Attachment = class()
 M.Attachment = Attachment
 
@@ -510,8 +509,8 @@ Attachment.NO_ATTACHMENT = json.JSON_NULL
 
 ---
 -- The constructor.
--- @param attachmentData attachments parameters table. 
--- Fields: (x, y, rotation, width, height, name) 
+-- @param attachmentData attachments parameters table.
+-- Fields: (x, y, rotation, width, height, name)
 -- @param attachmentName name of the attachment
 -- @param skeleton skeleton object
 function Attachment:init(attachmentData, attachmentName, skeleton)
@@ -580,9 +579,9 @@ end
 
 ---
 -- @type Event
--- 
--- Custom events, that can be trigerred from animations. 
--- Add event listeners to the skeleton. Event type is event name in spine. 
+--
+-- Custom events, that can be trigerred from animations.
+-- Add event listeners to the skeleton. Event type is event name in spine.
 SpineEvent = class(Event)
 M.SpineEvent = SpineEvent
 
@@ -599,7 +598,7 @@ end
 
 ---
 -- @type Skeleton
--- 
+--
 -- Skeleton object that can be created from Spine json files
 -- It is basically a DisplayObject that acts like a container for inner slots
 ---
@@ -609,14 +608,14 @@ M.Skeleton = Skeleton
 Skeleton.DEFAULT_SKIN = 'default'
 
 -----------------------------
--- Create skeleton from json file 
--- 
--- Flower by default have inverted Y axis (0 at top). Also, z rotation growth is clockwise. 
--- Spine uses the folowing coordinate conventions: Y is growing from bottom to top, 
--- rotation direction is counter-clockwise 
--- scaleX, scaleY and scaleZrot can be used for coordinate translation from spine to current project. 
--- 
--- @param path skeleton json path 
+-- Create skeleton from json file
+--
+-- Flower by default have inverted Y axis (0 at top). Also, z rotation growth is clockwise.
+-- Spine uses the folowing coordinate conventions: Y is growing from bottom to top,
+-- rotation direction is counter-clockwise
+-- scaleX, scaleY and scaleZrot can be used for coordinate translation from spine to current project.
+--
+-- @param path skeleton json path
 -- @param attachmentsPath (option) path to attachment images
 -- @param scaleX (option) x scale of the skeleton. Can be used to scale skeleton for different resolutions
 -- @param scaleY (option) x scale of the skeleton
@@ -691,13 +690,13 @@ function Skeleton:_initAttachments()
     if not skinsTable then
         return
     end
-    
+
     for skinName, skinData in pairs(skinsTable) do
         self.skins[skinName] = {}
-        for slotName, attachmentsTable in pairs(skinData) do 
+        for slotName, attachmentsTable in pairs(skinData) do
             local slotAttachments = {}
             self.skins[skinName][slotName] = slotAttachments
-            
+
             for attachmentName, attachmentData in pairs(attachmentsTable) do
                 local attachment = Attachment(attachmentData, attachmentName, self)
                 slotAttachments[attachmentName] = attachment
@@ -730,7 +729,7 @@ function Skeleton:_initEvents()
     if not eventsTable then
         return
     end
-    
+
     for eventName, eventData in pairs(eventsTable) do
         self.events[eventName] = SpineEvent(eventName, eventData)
     end
@@ -828,7 +827,7 @@ function Skeleton:playAnim(animationName, loop)
         anim:start()
         if loop then
             anim:setMode(MOAITimer.LOOP)
-        else 
+        else
             anim:setMode(MOAITimer.NORMAL)
         end
     end
@@ -852,7 +851,7 @@ end
 
 ---
 -- @type Animation
--- 
+--
 -- Animation object. Inherited from MOAIAnim
 Animation = class()
 Animation.__index = MOAIAnimInterface
@@ -867,7 +866,7 @@ Animation.EVENT_CUSTOM = 2
 
 ---
 -- The constructor
--- 
+--
 -- @param animationData animation table. Look spine json specs for format
 -- @param skeleton skeleton object
 function Animation:init(animationData, skeleton)
@@ -916,7 +915,7 @@ end
 
 function Animation:countLinks()
     local totalLinks = 0
-    
+
     local boneAnimations = self._data['bones']
     if boneAnimations then
         for boneName, timelineData in pairs(boneAnimations) do
@@ -933,7 +932,7 @@ function Animation:countLinks()
     end
 
     local slotAnimations = self._data["slots"]
-    if slotAnimations then        
+    if slotAnimations then
         for slotName, timelineData in pairs(slotAnimations) do
             for k, v in pairs(timelineData) do
                 if k == 'color' then
@@ -970,7 +969,7 @@ function Animation:createBezierKeys(curve, bezierData, startIndex, startTime, en
 
     local args = { }
 
-    for i = 1, #keys - 1 do 
+    for i = 1, #keys - 1 do
         k = keys[i]
         args[1] = startIndex + i - 1
         args[2] = startTime + k[1] * timeDiff
@@ -995,9 +994,9 @@ function Animation:createRotateLinks(keysData, target)
     for i, key in ipairs(keysData) do
         local val = Utils.wrapAngle(angle + key.angle * m_r - lastAngle)
         lastAngle = lastAngle + val
-        
+
         local easeType = key.curve == "stepped" and MOAIEaseType.FLAT or MOAIEaseType.LINEAR
-        
+
         if type(key.curve) == 'table' then
             local nextAngle = Utils.wrapAngle(angle + keysData[i + 1].angle * m_r - lastAngle)
             nextAngle = nextAngle + lastAngle
@@ -1020,20 +1019,20 @@ function Animation:createScaleLinks(keysData, target)
     local numKeys = self:countKeys(keysData)
     curveX:reserveKeys(numKeys)
     curveY:reserveKeys(numKeys)
-    
+
     local scX, scY = target._data.scaleX or 1, target._data.scaleY or 1
     local bezierIndexOffset = 0
 
     for i, key in ipairs(keysData) do
         local easeType = key.curve == "stepped" and MOAIEaseType.FLAT or MOAIEaseType.LINEAR
-        
+
         if type(key.curve) == 'table' then
             local nextValX = keysData[i + 1].x * scX
             local nextValY = keysData[i + 1].y * scY
-            
+
             self:createBezierKeys(curveX, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, {scX * key.x}, {nextValX})
             self:createBezierKeys(curveY, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, {scY * key.y}, {nextValY})
-            
+
             bezierIndexOffset = bezierIndexOffset + Animation.BEZIER_SUBDIVS - 1
 
         else
@@ -1059,7 +1058,7 @@ function Animation:createTranslateLinks(keysData, target)
 
     for i, key in ipairs(keysData) do
         local easeType = key.curve == "stepped" and MOAIEaseType.FLAT or MOAIEaseType.LINEAR
-        
+
         if type(key.curve) == 'table' then
             local curVal = {x + key.x * m_x, y + key.y * m_y, 0}
             local nextVal = {x + keysData[i + 1].x * m_x, y + keysData[i + 1].y * m_y, 0}
@@ -1091,10 +1090,10 @@ function Animation:createColorLinks(keysData, target)
     for i, key in ipairs(keysData) do
         local r, g, b, a = Utils.hexToRGBA(key.color)
         local easeType = key.curve == "stepped" and MOAIEaseType.FLAT or MOAIEaseType.LINEAR
-        
+
         if type(key.curve) == 'table' then
             local r2, g2, b2, a2 = Utils.hexToRGBA(keysData[i + 1].color)
-            
+
             self:createBezierKeys(curveR, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, r, r2)
             self:createBezierKeys(curveG, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, g, g2)
             self:createBezierKeys(curveB, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, b, b2)
@@ -1113,7 +1112,7 @@ function Animation:createColorLinks(keysData, target)
     self:setLink(self.nextLinkId + 1, curveG, target, MOAIColor.ATTR_G_COL)
     self:setLink(self.nextLinkId + 2, curveB, target, MOAIColor.ATTR_B_COL)
     self:setLink(self.nextLinkId + 3, curveA, target, MOAIColor.ATTR_A_COL)
-    
+
     self.nextLinkId = self.nextLinkId + 4
 end
 
@@ -1149,7 +1148,7 @@ function Animation:createEventCallbacks()
     local eventCurve = MOAIAnimCurve.new()
 
     eventCurve:reserveKeys(#eventKeyframes)
-    
+
     for i, key in ipairs(eventKeyframes) do
         eventCurve:setKey(i, key.time, 0, MOAIEaseType.FLAT)
             eventKeyframes[i] = {
