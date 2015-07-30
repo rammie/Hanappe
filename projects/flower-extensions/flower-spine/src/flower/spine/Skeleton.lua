@@ -116,8 +116,13 @@ function Skeleton:_initAttachments()
             self.skins[skinName][slotName] = slotAttachments
             
             for attachmentName, attachmentData in pairs(attachmentsTable) do
-                local attachment = Attachment(attachmentData, attachmentName, self)
-                slotAttachments[attachmentName] = attachment
+                if attachmentData.type ~= nil then
+                    -- TODO: deal with type boundingbox
+                    print("name: " .. attachmentName .. " " .. attachmentData.type)
+                else
+                    local attachment = Attachment(attachmentData, attachmentName, self)
+                    slotAttachments[attachmentName] = attachment
+                end
             end
         end
     end

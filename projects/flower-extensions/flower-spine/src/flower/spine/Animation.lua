@@ -253,10 +253,10 @@ function Animation:createColorLinks(keysData, target)
         if type(key.curve) == 'table' then
             local r2, g2, b2, a2 = SpineUtils.hexToRGBA(keysData[i + 1].color)
             
-            self:createBezierKeys(curveR, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, r, r2)
-            self:createBezierKeys(curveG, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, g, g2)
-            self:createBezierKeys(curveB, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, b, b2)
-            self:createBezierKeys(curveA, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, a, a2)
+            self:createBezierKeys(curveR, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, {r}, {r2})
+            self:createBezierKeys(curveG, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, {g}, {g2})
+            self:createBezierKeys(curveB, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, {b}, {b2})
+            self:createBezierKeys(curveA, key.curve, i + bezierIndexOffset, key.time, keysData[i + 1].time, {a}, {a2})
 
             bezierIndexOffset = bezierIndexOffset + Animation.BEZIER_SUBDIVS - 1
         else
