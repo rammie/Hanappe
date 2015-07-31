@@ -224,7 +224,11 @@ end
 -- @return padding for right
 -- @return padding for bottom
 function TextBox:getTextPadding()
-    return unpack(self:getStyle(TextBox.STYLE_TEXT_PADDING))
+    local padding = self:getStyle(TextBox.STYLE_TEXT_PADDING)
+    if padding == nil then
+        return 0, 0, 0, 0
+    end
+    return unpack(padding)
 end
 
 return TextBox

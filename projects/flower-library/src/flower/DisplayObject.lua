@@ -193,6 +193,17 @@ function DisplayObject:setVisible(visible)
 end
 
 ---
+-- Sets the object's box 2d body, inheriting its transform.
+-- @param parent parent
+function DisplayObject:setBody(body)
+    self.parent = parent
+    self:clearAttrLink(MOAITransform.INHERIT_TRANSFORM)
+    if body then
+        self:setAttrLink(MOAITransform.INHERIT_TRANSFORM, body, MOAITransform.TRANSFORM_TRAIT)
+    end
+end
+
+---
 -- Sets the object's parent, inheriting its color and transform.
 -- @param parent parent
 function DisplayObject:setParent(parent)

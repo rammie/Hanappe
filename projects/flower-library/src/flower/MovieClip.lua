@@ -36,6 +36,7 @@ local MovieClip = class(SheetImage)
 function MovieClip:init(texture, sizeX, sizeY, spacing, margin, flipX, flipY)
     MovieClip.__super.init(self, texture, sizeX, sizeY, spacing, margin, flipX, flipY)
     self.animTable = {}
+    self.dataTable = {}
     self.currentAnim = nil
 end
 
@@ -70,6 +71,7 @@ function MovieClip:setAnimData(name, data)
     anim:setCurve(curve)
 
     self.animTable[name] = anim
+    self.dataTable[name] = data
 end
 
 ---
